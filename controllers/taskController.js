@@ -144,16 +144,24 @@ exports.createTask = (req, res) => {
 exports.updateTask = (req, res) => {
   const taskId = req.params.taskId;
   const { taskName } = req.body;
-  const query = `UPDATE tasks SET taskName = ? WHERE id = ?`;
+  const query = `UPDATE tasks SET taskName = ? WHERE taskId = ?`;
   connection.query(query, [taskName, taskId], (error, results) => {
-    if (error) throw error;
+    if (error) {
+      if (error.code === "ER_DUP_ENTRY") {
+        // Duplicate entry error
+        return res.status(400).send("Task already exists. Can't update duplicate entry");
+      } else {
+        // Other error
+        throw error;
+      }
+    }
     res.send("Task updated successfully");
   });
 };
 
 exports.deleteTask = (req, res) => {
   const taskId = req.params.taskId;
-  const query = `DELETE FROM tasks WHERE id = ?`;
+  const query = `DELETE FROM tasks WHERE taskId = ?`;
   connection.query(query, [taskId], (error, results) => {
     if (error) throw error;
     res.send("Task deleted successfully");
